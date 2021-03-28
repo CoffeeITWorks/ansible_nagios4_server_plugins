@@ -10,7 +10,7 @@
 # checks if all sensors are ok, returns warning on high temperatures and
 # fan failures and critical on overall health failure
 #
-# Alexander Greiner-Baer <alexander.greiner-baer@web.de> 2007 - 2018
+# Alexander Greiner-Baer <alexander.greiner-baer@web.de> 2007 - 2021
 # Matthew Stier <Matthew.Stier@us.fujitsu.com> 2011
 #
 # This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,17 @@
 #
 #
 # Changelog:
+# 1.65    Sat, 06 Feb 2021 13:00:03 +0100
+#	  new option "--ignorecacheother|-O"
+#	    ignores cache status "Other"
+# 1.64    Tue, 02 Jun 2020 18:56:30 +0200
+#   fix memory status (was Unknown on an otherwise healthy G8)
+#   fix drive check for ilo2, was broken for 5 years...
+#   new option "-L"
+#     retrieve event log from RIB_INFO section
+#   fix help message for "-l"
+#   new option "-S"
+#     check self_test value from https://<ilohost>/json/login_session
 # 1.63    Tue, 13 Nov 2018 18:41:48 +0100
 #   support iLO5 firmware infos
 #   applied patch from Rene Koch
@@ -175,7 +186,8 @@ use XML::Simple;
 $Net::SSLeay::slowly = 5;
 
 use vars qw($VERSION $PROGNAME  $verbose $warn $critical $timeout $result);
-$VERSION = 1.63;
+
+$VERSION = 1.65;
 
 $PROGNAME = "check_ilo2_health";
 
@@ -188,7 +200,10 @@ our $p = Nagios::Plugin->new(
   [ -o|--powerredundancy ] [ -b|--locationlabel ] [ -l|--eventlogcheck]
   [ -i|--ignorelinkdown ] [ -x|--ignorebatterymissing ] [ -s|--sslv3 ]
   [ -t <timeout> ] [ -r <retries> ] [ -g|--getinfos ] [ --sslopts ]
-  [ -U|--ignorelinkunknown ] [ -v|--verbose ] ",
+  [ -U|--ignorelinkunknown ] [ -L|--eventlogiLO ] [ -S|--iLOselftest ]
+  [ -O|--ignorecacheother ]
+  [ -v|--verbose ] ",
+
         version => $VERSION,
         blurb => 'This plugin checks the health status on a remote iLO2|3|4|5 device
 and will return OK, WARNING or CRITICAL. iLO (integrated Lights-Out)
@@ -256,9 +271,15 @@ $p->add_arg(
   spec => 'eventlogcheck|l',
   help =>
   qq{-l, --eventlogcheck
-  Parse ILO eventlog for interesting events (f.e. broken memory).},
+  Parse iLO event log "Integrated Management Log" (SERVER_INFO) for interesting events (f.e. broken memory).},
 );
 
+$p->add_arg(
+  spec => 'eventlogiLO|L',
+  help =>
+  qq{-L, --eventlogiLO
+  Parse iLO event log "iLO Event Log" (RIB_INFO) for interesting events (f.e. Embedded media manager failed media attach).},
+);
 
 $p->add_arg(
   spec => 'skipsyntaxerrors|e',
@@ -338,6 +359,20 @@ $p->add_arg(
   Some firmware may need --sslopts 'SSL_verify_mode => SSL_VERIFY_NONE, SSL_version => "TLSv1"'.},
 );
 
+$p->add_arg(
+  spec => 'selftest|S',
+  help =>
+  qq{-S, --selftest
+  Make additional check for iLO self test from https://<ilohost>/json/login_session. May only work on iLO5.},
+);
+
+$p->add_arg(
+  spec => 'ignorecacheother|O',
+  help =>
+  qq{-O, --ignorecacheother
+  Ignore cache status "Other".},
+);
+
 # parse arguments
 $p->getopts;
 
@@ -369,6 +404,7 @@ my $iloboardversion = defined($p->opts->ilo3) ? "ILO>=3" : "ILO2";
 my $perfdata = defined($p->opts->perfdata) ? 1 : 0;
 my $locationlabel = defined($p->opts->locationlabel) ? 1 : 0;
 my $eventlogcheck = defined($p->opts->eventlogcheck) ? 1 : 0;
+my $eventlogiLO = defined($p->opts->eventlogiLO) ? 1 : 0;
 my $ignorelinkdown = defined($p->opts->ignorelinkdown) ? 1 : 0;
 my $ignorelinkunknown = defined($p->opts->ignorelinkunknown) ? 1 : 0;
 my $ignorebatterymissing = defined($p->opts->ignorebatterymissing) ? 1 : 0;
@@ -386,6 +422,8 @@ my $sslopts = 'SSL_verify_mode => SSL_VERIFY_NONE';
 our @product;
 our @serial;
 our @sname;
+my $optselftest = defined($p->opts->selftest) ? 1 : 0;
+my $ignorecacheother = defined($p->opts->ignorecacheother) ? 1 : 0;
 
 $message = "(Board-Version: $iloboardversion) ";
 
@@ -443,6 +481,11 @@ for (my $i=0;$i<=$retries;$i++) {
         $cmd .= '<GET_SERVER_NAME />';
       }
       $cmd .= '</SERVER_INFO>';
+      if ( $eventlogiLO ) {
+        $cmd .= '<RIB_INFO MODE="read">';
+        $cmd .= '<GET_EVENT_LOG />';
+        $cmd .= '</RIB_INFO>';
+      }
       $cmd .= '</LOGIN>';
       $cmd .= '</RIBCL>';
       $cmd .= "\r\n";
@@ -473,6 +516,11 @@ for (my $i=0;$i<=$retries;$i++) {
         print $client '<GET_SERVER_NAME />' . "\r\n";
       }
       print $client '</SERVER_INFO>' . "\r\n";
+      if ( $eventlogiLO ) {
+        print $client '<RIB_INFO MODE="read">' . "\r\n";
+        print $client '<GET_EVENT_LOG />' . "\r\n";
+        print $client '</RIB_INFO>' . "\r\n";
+      }
       print $client '</LOGIN>' . "\r\n";
       print $client '</RIBCL>' . "\r\n";
     }
@@ -690,7 +738,7 @@ if ( ref($memdetails) ) {
   foreach my $loc ( sort keys %{$memdetails} ) {
     foreach ( @{$memdetails->{$loc}} ) {
       $status = $_->{'STATUS'}[0]->{'VALUE'};
-      if ( ( $status !~ m"^Ok$|^Good|^n/a$|^Not Present$"i ) ) {
+      if ( ( $status !~ m"^Ok$|^Good|^n/a$|^Not Present$|^Unknown$"i ) ) {
         $return = "WARNING" unless ( $return eq "CRITICAL" );
         my $socket = $_->{'SOCKET'}[0]->{'VALUE'};
         my $size = $_->{'SIZE'}[0]->{'VALUE'};
@@ -747,6 +795,9 @@ if ( ref($raidcontroller) ) {
     if($cachestatus && $cachestatus ne 'OK') {
       # FIXME: There are probably other valid cache module states that
       #        needs to be excluded.
+      if($ignorecacheother && $cachestatus eq 'Other') {
+        next;
+      }
       $return = "CRITICAL";
       $message .= "SmartArray $ctrllabel Cache Status: $cachestatus, ";
     }
@@ -796,13 +847,26 @@ if ( $optcheckdrives ) {
 }
 
 # check event logs
-if ( $eventlogcheck ) {
+if ( $eventlogcheck || $eventlogiLO ) {
   foreach ( keys %event_status ) {
     next if ( $event_status{$_} =~ m/Repaired/ );
     $message .= " $_:$event_status{$_} ";
     $return = "WARNING" unless ( $return eq "CRITICAL" );
   }
 }
+
+# check self test
+if ( $optselftest ) {
+  my %ret = getselfteststatus();
+  if ($ret{'status'}) {
+    $return = "CRITICAL";
+    $message .= "iLO self test is $ret{'selftest'}, ";
+    if ( defined($ret{'faults'}) ) {
+      $message .= "self test fault is $ret{'faults'}, ";
+    }
+  }
+}
+
 
 unless ( $message ) {
   $message .= "No faults detected, ";
@@ -1018,7 +1082,7 @@ sub parse_reply
       ( $drive, $drivestatus ) = ( $line =~
         m/Drive Bay: "(.*)"; status: "(.*)"; uid led: ".*"/ );
       if ( defined($drive) && defined($drivestatus) ) {
-        $drives{$drive} = $drivestatus;
+        $drives{$drive}{'status'} = $drivestatus;
       }
     }
     if ( $line =~ m/<DRIVE BAY=".*" PRODUCT_ID="/ ) {
@@ -1027,12 +1091,12 @@ sub parse_reply
       ( $drive, $drivestatus ) = ( $line =~
         m/DRIVE BAY="(.*)" PRODUCT_ID=".*"STATUS="(.*)" UID_LED=".*"/ );
       if ( defined($drive) && defined($drivestatus) ) {
-        $drives{$drive} = $drivestatus;
+        $drives{$drive}{'status'} = $drivestatus;
       }
     }
   }
 
-  if ( $eventlogcheck ) {
+  if ( $eventlogcheck || $eventlogiLO ) {
     $is_event_input = 1 if ( $line =~ m"<EVENT" );
     if ( $is_event_input ) {
       if ( $line =~ m/SEVERITY="(.*?)"/ ) {
@@ -1076,4 +1140,49 @@ sub parse_reply
   }
 }
 
+sub getselfteststatus {
+  my ($json, $selftest, $selftestfaults, $selfteststatus);
+  # Set the default SSL port number if no port is specified
+  $host .= ":443" unless ($host =~ m/:/);
+  # Open the SSL connection and the input file
+  $client = new IO::Socket::SSL->new(PeerAddr => $host, eval $sslopts, $sslv3 ? 
+    ( SSL_version => 'SSLv3' ) : () );
+  unless ( $client ) {
+    $p->nagios_exit(
+      return_code => "UNKNOWN",
+      message => "ERROR: Failed to establish SSL connection with $host $! $SSL_ERROR."
+    );
+  }
 
+  print "sending self test status request\n" if ( $p->opts->verbose );
+
+  send_to_client(0, "GET /json/login_session HTTP/1.1\r\n");
+  send_to_client(0, "HOST: $hostname\r\n");          # Mandatory for http 1.1
+  send_to_client(0, "Connection: Close\r\n");         # Required
+  send_to_client(0, "\r\n");
+
+  # retrieve data
+  while (my $ln = <$client>) {
+    $json .= $ln;
+  }
+  close $client;
+
+  if ( $json ) {
+    print "$json\n" if ( $p->opts->verbose );
+    ( $selftest ) = ( $json =~ m/"self_test":"([^"]+)"/ );
+    ( $selftestfaults ) = ( $json =~ m/"self_test_faults":"([^"]+)"/ );
+    $selfteststatus = 0;
+    if ( defined($selftest) ) {
+      unless ( $selftest =~ m/^OP_STATUS_OK$/ ) {
+        $selfteststatus = 1;
+      }
+    }
+    return ( 'selftest' => $selftest, 'faults' => $selftestfaults, 'status' => $selfteststatus);
+  }
+  else {
+    $p->nagios_exit(
+      return_code => "UNKNOWN",
+      message => "ERROR: No parseable output from self test."
+    );
+  }
+}
