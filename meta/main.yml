@@ -1,6 +1,6 @@
 ---
 galaxy_info:
-  author: Diego Daguerre, Pablo Estigarribia
+  author: coffeeitworks
   description: Install nagios plugins from multiple sources
   license: GPLv2
   min_ansible_version: 2.5
