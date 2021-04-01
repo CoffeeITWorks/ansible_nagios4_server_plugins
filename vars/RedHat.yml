@@ -6,7 +6,8 @@
 nagios_service: nagios
 
 nagios_plugin_checkwmiplus_dependencies: 
-  - autoconf 
+  - automake 
+  - autoconf
   - gcc 
   - time
   - make
