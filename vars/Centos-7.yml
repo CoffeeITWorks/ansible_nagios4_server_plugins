@@ -17,13 +17,11 @@ nagios_plugins_rh_packages:
     - git
     #- php5-sybase # required for check_mssql.php
     #- update-notifier-common # Required for check_nrpe_os_update (only use it on client ubuntu, doesn't works on debian)
-    - python2-pip
+    - python-pip
     - python3-pip
-    - python2-devel # required for m2crypto
-    - platform-python-devel  # python3 development headers
-    # - net-snmp-python  # required for check_netbotz
-    - net-snmp-devel
-    - chrony
+    - python-devel  # required for m2crypto
+    - net-snmp-python  # required for check_netbotz
+    - ntp
     - nagios-plugins-all
     - nagios-plugins-nrpe
     - nrpe

@@ -18,7 +18,7 @@
   with_items: "{{ nagios_plugins_rh_packages }}"
   when: ansible_os_family == 'RedHat'
 
-- name: Remove conflicting packages ubuntu-14
+- name: config_plugins | Remove conflicting packages ubuntu-14
   apt:
     name: [ "python-distutils-extra", "python3-distutils-extra" ]
     state: absent
@@ -26,36 +26,36 @@
     - ansible_facts['distribution'] == "Ubuntu" 
     - ansible_facts['distribution_major_version'] == "14"
 
-- name: upgrade pip
+- name: config_plugins | upgrade pip
   command: "pip install {{ nagios_plugins_required_pip }}"
   changed_when: false
   tags:
     - skip-ansible-lint
 
-- name: Install plugins from pip packages
+- name: config_plugins | Install plugins from pip packages
   command: "pip2 install --ignore-installed {{ item }}"
   changed_when: false
   with_items: "{{ nagios_plugins_pip2_packages }}"
   tags:
     - skip-ansible-lint
 
-- name: upgrade pip3
+- name: config_plugins | upgrade pip3
   command: "pip3 install {{ nagios_plugins_required_pip }}"
   changed_when: false
   tags:
     - skip-ansible-lint
 
-- name: Install plugins from pip3 packages
+- name: config_plugins | Install plugins from pip3 packages
   command: "pip3 install --ignore-installed {{ item }}"
   changed_when: false
   with_items: "{{ nagios_plugins_pip3_packages }}"
   tags:
     - skip-ansible-lint
 
-- name: create plugins directory for plugins libs
+- name: config_plugins | create plugins directory for plugins libs
   file: 'path={{ nagios_plugins_dir }} owner=root group=root mode="u+rwx,g+rx,o+rx" state=directory'
 
-- name: Install plugins on plugins dir
+- name: config_plugins | Install plugins on plugins dir
   copy: 
     src: plugins/ 
     dest: "{{ nagios_plugins_dir }}"
@@ -63,7 +63,7 @@
     group: root 
     mode: u+rwx,g+rx,o+rx
 
-- name: Install plugins from git clone
+- name: config_plugins | Install plugins from git clone
   git:
     repo: "{{ item.repo }}"
     clone: yes
@@ -71,10 +71,10 @@
     depth: 1
   with_items: "{{ nagios_plugins_repos }}"
 
-- name: create plugins directory for commands cfg
+- name: config_plugins | create plugins directory for commands cfg
   file: 'path={{ nagios_config_cfg_plugins }} owner=nagios group=nagios mode="u+rwx,g+rwx,o+rx" state=directory'
 
-- name: configure the commands for plugins
+- name: config_plugins | configure the commands for plugins
   template:
     src: "{{ item }}"
     dest: '{{ nagios_config_cfg_plugins }}/{{ item | basename | regex_replace("\.j2","") }}'
@@ -86,7 +86,7 @@
 
   notify: Reload Nagios
 
-- name: Configure additional plugins
+- name: config_plugins | Configure additional plugins
   template: 
     src: '{{ item.src }}'
     dest: '{{ nagios_config_cfg_plugins }}/{{ item.dest }}'
