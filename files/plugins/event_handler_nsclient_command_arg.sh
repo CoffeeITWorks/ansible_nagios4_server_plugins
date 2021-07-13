@@ -13,7 +13,7 @@ date=`date +"%Y-%m-%d %H:%M %Z"`
 case "$1" in (CRITICAL)
  if [ "$statetype" = "HARD" ] ; then
  /bin/echo -en "$date | ${0##*/} Got state: <$state> and statetype: <$statetype> with command <$command> and argument <$cmdarg> for execution on host <$host>\n" >> $logfile
- /opt/plugins/check_nrpe -H $host -c $command -a $cmdarg >> $logfile
+ /usr/lib/nagios/plugins/check_nrpe -H $host -c $command -a $cmdarg >> $logfile
  fi
 esac
 exit 0
