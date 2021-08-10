@@ -1,7 +1,0 @@
----
-- name: Converge
-  hosts: all
-  roles:
-    - role: ansible-role-nagios
-    - role: coffeeitworks.ansible_nagios4_server_config
-    - role: ansible_nagios4_server_plugins

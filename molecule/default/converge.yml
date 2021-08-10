@@ -2,7 +2,7 @@
 - name: Converge
   hosts: all
   vars:
-    nagios_plugins_install_checkwmiplus: True
+    nagios_plugins_install_checkwmiplus: False
   roles:
     - role: ansible-role-nagios
     - role: coffeeitworks.ansible_nagios4_server_config

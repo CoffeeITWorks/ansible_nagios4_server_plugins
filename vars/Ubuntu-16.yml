@@ -3,9 +3,19 @@
 #::::::::::::::
 ---
 
+nagios_service: nagios
+
+nagios_plugin_checkwmiplus_dependencies: 
+  - autoconf 
+  - gcc 
+  - time
+  - make
+  - wget
+
 nagios_plugins_apt_packages:
     - git
     - libnet-dns-perl  # required for check_iftraffic43a.pl
+    - libnagios-plugin-perl # required for hp ilo
     - libxml-simple-perl # required for hp ilo
     - php-sybase # required for check_mssql.php
     #- update-notifier-common # Required for check_nrpe_os_update (only use it on client ubuntu, doesn't works on debian)
@@ -13,6 +23,7 @@ nagios_plugins_apt_packages:
     - python-pip
     - python3-pip
     - python-dev  # required for m2crypto
+    - python3-dev  # required for m2crypto
     - nagios-plugins # required for some perl modules /usr/lib/nagios/plugins/utils.pm
     - libnumber-format-perl # required for checkwmiplus
     - libconfig-inifiles-perl # required for checkwmiplus
