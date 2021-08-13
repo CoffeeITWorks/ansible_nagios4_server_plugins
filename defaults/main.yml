@@ -36,8 +36,8 @@ nagios_plugins_pip3_packages:
     - "curlnagios>=0.6.0"
     - "sp-health>=0.2.7"
     - "gurobi-machines-plugin>=0.7.0"
-    - "nagios-historian>=0.6.0"
-    - "webapp-health-check>=1.1"
+    - "nagios-historian>=0.6.7"
+    - "webapp-health-check"
 
 
 nagios_plugins_pip2_packages:
