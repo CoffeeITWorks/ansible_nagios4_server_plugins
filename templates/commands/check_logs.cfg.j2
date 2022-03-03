@@ -1,0 +1,8 @@
+# https://github.com/CoffeeITWorks/nagios_gurobi_machines_plugin
+# {{ ansible_managed }}
+
+define command{
+    command_name  check_logs
+    command_line  /usr/local/bin/check_logs --fl "$ARG1$" --wd "$ARG2$" --extra_args='$ARG3$'
+}
+
