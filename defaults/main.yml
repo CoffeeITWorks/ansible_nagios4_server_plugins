@@ -38,8 +38,7 @@ nagios_plugins_pip3_packages:
     - "gurobi-machines-plugin>=0.7.0"
     - "nagios-historian>=0.6.0"
     - "webapp-health-check>=1.1"
-    - "logs-check-plugin>=1.3.0"
-
+ 
 
 nagios_plugins_pip2_packages:
     - "setuptools>=35.0.2" # required to not fail when using git+https
