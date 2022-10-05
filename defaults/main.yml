@@ -38,7 +38,9 @@ nagios_plugins_pip3_packages:
     - "gurobi-machines-plugin>=0.7.0"
     - "nagios-historian>=0.6.7"
     - "webapp-health-check"
-    - "logs-check-plugin>=1.2.0"
+    - "logs-check-plugin>=1.4.0"
+    - "azure-alerts-plugin>=1.2.0"
+    
 
 
 nagios_plugins_pip2_packages:
