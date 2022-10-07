@@ -39,7 +39,7 @@ nagios_plugins_pip3_packages:
     - "nagios-historian>=0.6.7"
     - "webapp-health-check"
     - "logs-check-plugin>=1.4.0"
-    - "azure-alerts-plugin>=0.1.8"
+    - "azure-alerts-plugin>=0.1.9"
     
 
 
