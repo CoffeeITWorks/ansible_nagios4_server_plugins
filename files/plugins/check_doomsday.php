@@ -76,7 +76,7 @@ function doit(){
 			}
 		// otherwise we're in the clear
 		else{
-			$return_code=0;
+			$return_code=2;
 			$result_string=$passed_string;
 			}
 		}
