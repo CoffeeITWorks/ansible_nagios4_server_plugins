@@ -22,7 +22,7 @@ function doit(){
 	$long_output=array();
 	
 	$ok_string="Things are okay for now. %duration% left until %doomsdayname%";
-	$recovery_string="%doomsdayname% passed and things are still okay. Whew!";
+	$passed_string="%doomsdayname% passed!";
 	$warning_string="WARNING: Only %duration% left until %doomsdayname%";
 	$critical_string="CRITICAL: Only %duration% left until %doomsdayname% - get ready!";
 	$unknown_pre_string="%doomsdayname% is upon us...";
@@ -77,7 +77,7 @@ function doit(){
 		// otherwise we're in the clear
 		else{
 			$return_code=0;
-			$result_string=$recovery_string;
+			$result_string=$passed_string;
 			}
 		}
 		
