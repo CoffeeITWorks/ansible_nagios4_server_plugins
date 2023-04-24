@@ -45,6 +45,7 @@ nagios_plugins_pip3_packages:
 nagios_plugins_pip2_packages:
     - "setuptools>=35.0.2" # required to not fail when using git+https
     - "--upgrade git+https://github.com/pablodav/nelmon.git"
+    - "pyasn1>=0.4.1"
 
 nagios_plugins_required_pip: "pip>=9.0.1"
 
