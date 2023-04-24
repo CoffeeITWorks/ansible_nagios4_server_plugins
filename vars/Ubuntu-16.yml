@@ -31,4 +31,5 @@ nagios_plugins_apt_packages:
     - python-netsnmp  # required for check_netbotz
     - python-pywbem # required for https://exchange.nagios.org/directory/Plugins/Operating-Systems/%2A-Virtual-Environments/VMWare/Check-hardware-running-VMware-ESXi/details#_ga=2.89786515.94408166.1497532407-2035280105.1475087624
     - python-m2crypto # required for check_esxi_wbem.py
+    - openjdk-8-jdk # requiered for check_jmx
 
