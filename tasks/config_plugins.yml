@@ -33,7 +33,7 @@
     - skip-ansible-lint
 
 - name: config_plugins | Install plugins from pip packages
-  command: "pip2 install --ignore-installed {{ item }}"
+  command: "pip2 install --force-reinstall --ignore-installed {{ item }}"
   changed_when: false
   with_items: "{{ nagios_plugins_pip2_packages }}"
   tags:
