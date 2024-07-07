@@ -1,25 +1,25 @@
 ---
 # file: tasks/main.yml
 
-- include: multi_os.yml
+- import_tasks: multi_os.yml
   tags:
     - config_nagios_plugins
     - test_nagios_plugins
 
-- include: config_plugins.yml
+- import_tasks: config_plugins.yml
   tags:
     - config_nagios_plugins
 
-- include: plugin_checkwmiplus.yml
+- import_tasks: plugin_checkwmiplus.yml
   when: nagios_plugins_install_checkwmiplus | bool
   tags:
     - config_nagios_plugins
 
-- include: plugin_check_netbotz.yml
+- import_tasks: plugin_check_netbotz.yml
   when: nagios_plugins_check_netbotz_tweaks | bool
   tags:
     - config_nagios_plugins
 
-- include: tests.yml
+- import_tasks: tests.yml
   tags:
     - test_nagios_plugins
